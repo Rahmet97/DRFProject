@@ -1,3 +1,4 @@
 from django.contrib import admin
+from .models import Region, District, Announcement, Blog
 
-# Register your models here.
+admin.site.register((Region, District, Announcement, Blog))

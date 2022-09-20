@@ -34,6 +34,7 @@ def login(request):
             'username': username,
             'password': password
         }
+        make_password(password)
         url = 'http://127.0.0.1:8000/auth/token/'
         res = requests.post(url, req)
         data = res.json()
@@ -48,32 +49,26 @@ def login(request):
 @authentication_classes([])
 def register(request):
     try:
-        first_name = request.data['first_name']
-        last_name = request.data['last_name']
-        email = request.data['email']
-        username = request.data['username']
-        password1 = request.data['password1']
-        password2 = request.data['password2']
 
-        if password1 == password2:
-            if User.objects.filter(username=username).exists():
+        if request.data['password'] == request.data['password2']:
+            if User.objects.filter(username=request.data['username']).exists():
                 data = {
                     'error': "Bunday username mavjud"
                 }
-            elif User.objects.filter(email=email).exists():
+            elif User.objects.filter(email=request.data['email']).exists():
                 data = {
                     'error': "Bunday email mavjud"
                 }
             else:
+                us = UserSerializer(request.data)
                 user = User.objects.create_user(
-                    first_name=first_name,
-                    last_name=last_name,
-                    username=username,
-                    email=email,
-                    password=make_password(password1)
+                    first_name=request.data['first_name'],
+                    last_name=request.data['last_name'],
+                    email=request.data['email'],
+                    username=request.data['username'],
+                    password=request.data['password']
                 )
                 user.save()
-                us = UserSerializer(request.data)
                 data = {
                     'message': 'Muvaffaqiyatli ro`yhatdan o`tdingiz',
                     'data': us.data
@@ -87,3 +82,46 @@ def register(request):
             'error': f'{e}'
         }
     return Response(data)
+
+
+@api_view(['PUT'])
+@authentication_classes([JWTAuthentication])
+def update_user(request):
+    user = request.user
+    print(request.data.keys())
+    if 'first_name' in request.data.keys():
+        user.first_name = request.data['first_name']
+    if 'last_name' in request.data.keys():
+        user.last_name = request.data['last_name']
+    if 'username' in request.data.keys():
+        if not User.objects.filter(username=request.data['username']):
+            user.username = request.data['username']
+        else:
+            data = {
+                'error': 'Bunday username mavjud'
+            }
+            return Response(data, status=405)
+    if 'email' in request.data.keys():
+        if not User.objects.filter(username=request.data['email']):
+            user.username = request.data['email']
+        else:
+            data = {
+                'error': 'Bunday email mavjud'
+            }
+            return Response(data, status=405)
+    user.save()
+    data = {
+        'data': UserSerializer(user).data
+    }
+    return Response(data)
+
+
+@api_view(['DELETE'])
+@authentication_classes([JWTAuthentication])
+def delete(request):
+    user = request.user
+    user.delete()
+    data = {
+        'message': "O'chirildi"
+    }
+    return Response(data, status=204)
