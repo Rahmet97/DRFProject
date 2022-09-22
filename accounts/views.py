@@ -34,7 +34,6 @@ def login(request):
             'username': username,
             'password': password
         }
-        make_password(password)
         url = 'http://127.0.0.1:8000/auth/token/'
         res = requests.post(url, req)
         data = res.json()
