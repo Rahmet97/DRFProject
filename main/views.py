@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from accounts.permissions import DirectorPermission
 from .models import Announcement, District, Region, Blog
 from .serializers import AnnouncementSerializer, DistrictSerializer, RegionSerializer, BlogSerializer
 
@@ -89,6 +90,40 @@ class GetBlogs(APIView):
         return Response(serializer.data)
 
 
+class BlogCreate(APIView):
+    permission_classes = (DirectorPermission,)
+
+    def post(self, request):
+        blog = BlogSerializer(data=request.data)
+        blog.is_valid(raise_exception=True)
+        blog.save()
+
+        return Response(blog.data)
+
+
+class BlogUpdateDelete(APIView):
+    permission_classes = (DirectorPermission,)
+
+    def put(self, request, pk):
+        blog = Blog.objects.get(pk=pk)
+        if "title" in request.data.keys():
+            blog.title=request.data['title']
+        if "description" in request.data.keys():
+            blog.description = request.data['description']
+        if "img" in request.data.keys():
+            blog.img = request.data['img']
+        if "expiration_date" in request.data.keys():
+            blog.expiration_date = request.data['expiration_date']
+
+        serializer = BlogSerializer(blog)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        blog = Blog.objects.get(pk=pk)
+        blog.delete()
+        return Response(status=204)
+
+
 class DeleteAnnouncement(APIView):
     authentication_classes = (JWTAuthentication,)
 
@@ -97,5 +132,3 @@ class DeleteAnnouncement(APIView):
         delete_announcement.delete()
 
         return Response(status=204)
-
-

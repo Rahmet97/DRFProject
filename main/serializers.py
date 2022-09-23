@@ -45,8 +45,10 @@ class RegionSerializer(serializers.ModelSerializer):
 
 
 class BlogSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        return Blog.objects.create(**validated_data)
+
     class Meta:
         model = Blog
         fields = '__all__'
-
-
